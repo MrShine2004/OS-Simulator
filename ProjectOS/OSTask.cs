@@ -21,6 +21,7 @@ namespace ProjectOS
         public CMD Status;  // Статус задачи
         public int currentCmd;
         public int CMDLen;
+        public int executedCmd;
         public List<CMD> Commands = new List<CMD>();
 
         // Конструктор для задания
@@ -36,6 +37,7 @@ namespace ProjectOS
             Status = CMD.WAIT;
             CMDLen = 50;
             currentCmd = 0;
+            executedCmd = 0;
             int tIO = IO_cmnd;
             int tCMND = N_cmnd;
             Random rng = new Random();

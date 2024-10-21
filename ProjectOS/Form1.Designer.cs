@@ -478,7 +478,7 @@
             textBoxSpeed.PlaceholderText = "Тактов в секунду";
             textBoxSpeed.Size = new Size(165, 23);
             textBoxSpeed.TabIndex = 1;
-            textBoxSpeed.Text = "600";
+            textBoxSpeed.Text = "150";
             textBoxSpeed.KeyPress += KeyPress;
             // 
             // textBoxKvant

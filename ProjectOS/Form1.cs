@@ -20,7 +20,8 @@ namespace ProjectOS
         public int currentTick = 0;
         public bool kvantStatus = false;
         public bool loadStatus = false;
-        public OSTask executerTask = null;
+        public int currentTaskId = 0;
+        public OSTask executedTask = null;
 
         public bool System_Status = false;
         public Stopwatch stopwatch; // Объект Stopwatch для отсчёта времени
@@ -65,7 +66,7 @@ namespace ProjectOS
         private void InitializeCommandsGridView ()
         {
             // Добавляем колонки в DataGridView
-            dataGridViewCommands.Columns.Add("Id", "№");
+            dataGridViewCommands.Columns.Add("Num", "№");
             dataGridViewCommands.Columns.Add("Type", "Тип");
 
             // Установка ширины для каждого столбца (в пикселях)
@@ -171,11 +172,13 @@ namespace ProjectOS
         public void DelaySimulate (int temp, Process process, int k)
         {
             int tik = currentTick;
+            int temp2 = temp;
             process.AssociatedTask.currentCmd = process.AssociatedTask.CMDLen;
-            while (currentTick - tik <= temp && process.AssociatedTask.currentCmd > 0)
+            while (currentTick - tik <= temp2 && process.AssociatedTask.currentCmd > 0)
             {
+                Thread.Sleep(myOS.Speed);
                 process.AssociatedTask.currentCmd--;
-                UpdateDataGridViewTasks(executerTask);
+                UpdateDataGridViewTasks();
             }
         }
 
@@ -185,7 +188,7 @@ namespace ProjectOS
             int tik = currentTick;
             while (currentTick - tik <= temp)
             {
-
+                Thread.Sleep(myOS.Speed);
             }
         }
 
@@ -196,8 +199,9 @@ namespace ProjectOS
             process.AssociatedTask.currentCmd = process.AssociatedTask.N_InOut;
             while (currentTick - tik <= temp && process.AssociatedTask.currentCmd > 0)
             {
+                Thread.Sleep(myOS.Speed);
                 process.AssociatedTask.currentCmd--;
-                UpdateDataGridViewTasks(executerTask);
+                UpdateDataGridViewTasks();
             }
         }
 
@@ -237,8 +241,8 @@ namespace ProjectOS
                     }
                     // Инкапсулируем в процесс
                     Process currentProcess = new Process(currentTask.Task_Id, currentTask, currentTask.Prior);
-                    executerTask = currentTask;
-                    SelectTaskById(executerTask.Task_Id);
+                    currentTaskId = currentTask.Task_Id;
+                    executedTask = currentTask;
 
                     // Затраты на загрузку нового задания
                     DelaySimulate(myOS.T_Load);
@@ -317,35 +321,83 @@ namespace ProjectOS
             }
             else
             {
-                // Очищаем текущие строки в таблице
-                dataGridViewTasks.Rows.Clear();
+                // Отключаем обновление интерфейса для оптимизации
+                dataGridViewTasks.SuspendLayout();
 
-                // Проходим по списку задач и добавляем их в таблицу
-                for (int i = 0; i < tasksList.Count; i++)
+                // Сначала удаляем строки, если задачи больше нет в списке tasksList
+                for (int i = dataGridViewTasks.Rows.Count - 1; i >= 0; i--)
                 {
-                    OSTask task = tasksList[i];
-                    dataGridViewTasks.Rows.Add(
-                        task.Task_Id,
-                        task.V_task,
-                        task.N_cmnd,
-                        task.D_InOut,
-                        task.N_InOut,
-                        task.Prior,
-                        task.Status,
-                        task.currentCmd
-                    );
+                    var cellValue = dataGridViewTasks.Rows[i].Cells["TaskId"].Value;
+
+                    // Проверяем, есть ли значение в ячейке TaskId
+                    if (cellValue == null || !(cellValue is int taskId))
+                    {
+                        // Пропускаем строки с пустыми или некорректными значениями TaskId
+                        continue;
+                    }
+
+                    // Удаляем строку, если задачи с таким TaskId нет в tasksList
+                    if (!tasksList.Any(task => task.Task_Id == taskId))
+                    {
+                        dataGridViewTasks.Rows.RemoveAt(i);
+                    }
                 }
 
+                // Обновляем или добавляем задачи в таблицу
+                foreach (OSTask task in tasksList)
+                {
+                    bool taskFound = false;
+
+                    // Проверяем, есть ли уже строка с таким TaskId
+                    foreach (DataGridViewRow row in dataGridViewTasks.Rows)
+                    {
+                        if (row.Cells["TaskId"].Value != null && (int)row.Cells["TaskId"].Value == task.Task_Id)
+                        {
+                            // Обновляем данные существующей строки, проверяя значения на null
+                            row.Cells["VTask"].Value = task.V_task;
+                            row.Cells["NCmnd"].Value = task.N_cmnd;
+                            row.Cells["DInOut"].Value = task.D_InOut;
+                            row.Cells["NInOut"].Value = task.N_InOut;
+                            row.Cells["Prior"].Value = task.Prior;
+                            row.Cells["Status"].Value = task.Status;
+                            row.Cells["Takt"].Value = task.currentCmd;
+
+                            taskFound = true;
+                            break;
+                        }
+                    }
+
+                    // Если задачи не было, добавляем её как новую строку
+                    if (!taskFound)
+                    {
+                        dataGridViewTasks.Rows.Add(
+                            task.Task_Id,
+                            task.V_task,
+                            task.N_cmnd,
+                            task.D_InOut,
+                            task.N_InOut,
+                            task.Prior,
+                            task.Status,
+                            task.currentCmd
+                        );
+                    }
+                }
+
+                // Включаем обновление интерфейса обратно
+                dataGridViewTasks.ResumeLayout();
             }
         }
 
+
+
+
         // Функция для обновления DataGridView
-        public void UpdateDataGridViewTasks (OSTask executerTaskUpdate)
+        public void UpdateDataGridViewTasks (int ID)
         {
             if (dataGridViewTasks.InvokeRequired)
             {
                 // Если вызов идет не из основного потока, используем Invoke
-                dataGridViewTasks.Invoke(new Action(() => UpdateDataGridViewTasks(executerTaskUpdate)));
+                dataGridViewTasks.Invoke(new Action(() => UpdateDataGridViewTasks(ID)));
             }
             else
             {
@@ -367,8 +419,6 @@ namespace ProjectOS
                         task.currentCmd
                     );
                 }
-                SelectTaskById(executerTaskUpdate.Task_Id);
-                UpdateCommandsTable(executerTaskUpdate);
             }
         }
 
@@ -392,7 +442,6 @@ namespace ProjectOS
                         task.Commands[i]
                     );
                 }
-                SelectCmdById(task.currentCmd);
             }
         }
 
@@ -502,7 +551,7 @@ namespace ProjectOS
                             textBoxVTask.Text = random.Next(1, 100).ToString(); // Величина задачи
                             textBoxNCmnd.Text = random.Next(2, 50).ToString(); // Количество команд
                             trackBarDInOut.Value = random.Next(0, 100); // Процент дисковых операций
-                            textBoxNInOut.Text = random.Next(myOS.Kvant * 2, myOS.Kvant * 4).ToString(); // Количество ввода/вывода
+                            textBoxNInOut.Text = random.Next(150, 350).ToString(); // Количество ввода/вывода
                             labelTrackBarLocation.Text = "" + trackBarDInOut.Value + "%";
                             trackBarPriority.Value = random.Next(1, 10); // Приоритет задачи
                             labelPriority.Text = "" + trackBarPriority.Value;
@@ -551,7 +600,7 @@ namespace ProjectOS
             textBoxVTask.Text = random.Next(1, 100).ToString(); // Величина задачи
             textBoxNCmnd.Text = random.Next(2, 50).ToString(); // Количество команд
             trackBarDInOut.Value = random.Next(0, 100); // Процент дисковых операций
-            textBoxNInOut.Text = random.Next(myOS.Kvant * 2, myOS.Kvant * 4).ToString(); // Количество ввода/вывода
+            textBoxNInOut.Text = random.Next(150, 350).ToString(); // Количество ввода/вывода
             labelTrackBarLocation.Text = "" + trackBarDInOut.Value + "%";
             trackBarPriority.Value = random.Next(1, 10); // Приоритет задачи
             labelPriority.Text = "" + trackBarPriority.Value;
@@ -616,22 +665,23 @@ namespace ProjectOS
 
                 // Выполнение команды ввода/вывода
                 currentTask.Status = CMD.IO;
-                UpdateDataGridViewTasks(executerTask);
+                UpdateDataGridViewTasks();
                 SimulateIOCommand(currentProcess, myCpu, task.N_InOut);
 
                 currentTask.Status = CMD.IO_END;
-                UpdateDataGridViewTasks(executerTask);
+                UpdateDataGridViewTasks();
                 // Затраты на обслуживание прерывания ввода/вывода
                 DelaySimulate(myOS.T_IntrIO);
                 currentTask.IO_cmnd--;
                 currentTask.N_cmnd--;
 
 
-                currentProcess.AssociatedTask.Commands.RemoveAt(0);
+                //currentProcess.AssociatedTask.Commands.RemoveAt(0);
+                currentProcess.AssociatedTask.executedCmd++;
                 // Затраты ОС на изменение состояния процесса
                 DelaySimulate(myOS.T_InitIO);
                 currentTask.Status = CMD.WAIT;
-                UpdateDataGridViewTasks(executerTask);
+                UpdateDataGridViewTasks();
                 // Затраты ОС на обслуживание прерывания
                 DelaySimulate(myOS.T_IntrIO);
             });
@@ -681,7 +731,7 @@ namespace ProjectOS
             }
         }
 
-        private void SelectTaskById (int taskId)
+        public void SelectTaskById (int taskId)
         {
             if (dataGridViewTasks.InvokeRequired)
             {
@@ -719,6 +769,7 @@ namespace ProjectOS
                             labelCmds.Text = "ID задачи: " + taskId;
                             // Если задача найдена, обновляем таблицу команд для этой задачи
                             UpdateCommandsTable(selectedTask);
+                            SelectCmdById(selectedTask.executedCmd);
                         }
                         else
                         {
@@ -729,35 +780,37 @@ namespace ProjectOS
             }
         }
 
-
         public void SelectCmdById (int cmdId)
         {
             if (dataGridViewCommands.InvokeRequired)
             {
                 // Если вызов идет из другого потока, используем Invoke
-                dataGridViewTasks.Invoke(new Action(() => SelectTaskById(cmdId)));
+                dataGridViewCommands.Invoke(new Action(() => SelectCmdById(cmdId)));
             }
             else
             {
                 // Очищаем все предыдущие выделения
                 dataGridViewCommands.ClearSelection();
 
-                // Проходим по строкам dataGridViewTasks
+                // Проходим по строкам dataGridViewCommands
                 foreach (DataGridViewRow row in dataGridViewCommands.Rows)
                 {
-                    // Проверяем, что строка содержит значение TaskId и оно не null
-                    if (row.Cells["Id"].Value != null)
+                    // Проверяем, что строка содержит значение Num и оно не null
+                    if (row.Cells["Num"].Value != null)
                     {
                         // Пробуем получить ID задачи из ячейки
                         int currentCmdId;
-                        bool isValidId = int.TryParse(row.Cells["Id"].Value.ToString(), out currentCmdId);
+                        bool isValidId = int.TryParse(row.Cells["Num"].Value.ToString(), out currentCmdId);
 
                         if (isValidId && currentCmdId == cmdId)
                         {
                             // Если ID совпадает, выбираем строку
                             row.Selected = true;
                             // Прокручиваем DataGridView, чтобы выбранная строка была видна
-                            dataGridViewCommands.FirstDisplayedScrollingRowIndex = row.Index;
+                            if (row.Index > 4)
+                                dataGridViewCommands.FirstDisplayedScrollingRowIndex = row.Index - 5;
+                            else
+                                dataGridViewCommands.FirstDisplayedScrollingRowIndex = 0;
                             break; // Можно выйти из цикла, так как задача найдена
                         }
                     }

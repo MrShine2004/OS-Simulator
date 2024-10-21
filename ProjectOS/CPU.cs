@@ -30,25 +30,26 @@ namespace ProjectOS
         // Методы для выполнения команд и управления процессами
         public void ExecuteCommand(Process process, int k)
         {
+            mw.SelectTaskById(process.AssociatedTask.Task_Id);
             this.Command = true;
             this.CurProc = process.Process_Id;
-            CMD executeCmd = process.AssociatedTask.Commands[process.AssociatedTask.currentCmd];
-            mw.SelectCmdById(process.AssociatedTask.currentCmd);
             mw.RefreshInterface();
-            if(process.AssociatedTask.Commands.Count > process.AssociatedTask.currentCmd)
+            mw.UpdateCommandsTable(process.AssociatedTask);
+            mw.SelectCmdById(process.AssociatedTask.executedCmd);
+            if (process.AssociatedTask.Commands.Count()>process.AssociatedTask.executedCmd)
             {
                 PC++;
                 OSTask currentTask = process.AssociatedTask;
                 Process currentProcess = process;
                 // Логика выполнения команды процесса
-                if (executeCmd == CMD.IO)
+                if (process.AssociatedTask.Commands[process.AssociatedTask.executedCmd] == CMD.IO)
                 {
                     currentTask.currentCmd = currentTask.N_InOut;
                     process.PC_IO++;
                     // Затраты ОС на изменение состояния процесса
                     mw.DelaySimulate(myOS.T_InitIO);
                     currentProcess.AssociatedTask.Status = CMD.IO_START;
-                    mw.UpdateDataGridViewTasks(mw.executerTask);
+                    mw.UpdateDataGridViewTasks();
                     Console.WriteLine("Here, " + process.AssociatedTask.N_cmnd);
                     Console.WriteLine("Here, 2 " + process.AssociatedTask.N_cmnd);
                     this.CurProc = -1;
@@ -59,12 +60,12 @@ namespace ProjectOS
                     mw.ProcessIOCommand(currentProcess);
                     return;
                 }
-                else if (executeCmd == CMD.ARIFM)
+                else if (process.AssociatedTask.Commands[process.AssociatedTask.executedCmd] == CMD.ARIFM)
                 {
                     currentTask.Status = CMD.ARIFM;
                     // Увеличиваем счетчик команд процесса
                     process.PC++;
-                    mw.UpdateDataGridViewTasks(mw.executerTask);
+                    mw.UpdateDataGridViewTasks();
                     currentTask.currentCmd = currentTask.CMDLen;
                     // Инициализация процессора процессом
                     this.CurProc = currentProcess.Process_Id;
@@ -74,14 +75,15 @@ namespace ProjectOS
                     mw.DelaySimulate(myOS.T_InitIO);
                     mw.DelaySimulate(process.AssociatedTask.currentCmd, process, k);
                 }
-                else if (executeCmd == CMD.END)
+                else if (process.AssociatedTask.Commands[process.AssociatedTask.executedCmd] == CMD.END)
                 {
                     // Затраты ОС на изменение состояния процесса
                     mw.DelaySimulate(myOS.T_InitIO);
                     // Удаляем процесс из списка заданий, так как он завершён
                     currentTask.Status = CMD.END;
 
-                    process.AssociatedTask.currentCmd++;
+                    //process.AssociatedTask.Commands.RemoveAt(0);
+                    process.AssociatedTask.executedCmd++;
 
                     mw.UpdateDataGridViewTasks();
                     // Затраты ОС на обслуживание прерывания
@@ -121,11 +123,12 @@ namespace ProjectOS
                         //MessageBox.Show("Некорректное удаление!");
                     }
                 }
-                process.AssociatedTask.currentCmd++;
+                //process.AssociatedTask.Commands.RemoveAt(0);
+                process.AssociatedTask.executedCmd++;
                 // Затраты ОС на изменение состояния процесса
                 mw.DelaySimulate(myOS.T_InitIO);
                 currentTask.Status = CMD.WAIT;
-                mw.UpdateDataGridViewTasks(mw.executerTask);
+                mw.UpdateDataGridViewTasks();
                 // Затраты ОС на обслуживание прерывания
                 mw.DelaySimulate(myOS.T_IntrIO);
                 mw.myCpu.CurProc = -1;
