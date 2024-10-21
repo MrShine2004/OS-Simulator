@@ -39,12 +39,13 @@
             textBoxVTask = new TextBox();
             textBoxNCmnd = new TextBox();
             textBoxNInOut = new TextBox();
-            textBoxPrior = new TextBox();
             trackBarDInOut = new TrackBar();
             labelTrackBarLocation = new Label();
             buttonAddTask = new Button();
             radioButtonManual = new RadioButton();
             radioButtonAuto = new RadioButton();
+            trackBarPriority = new TrackBar();
+            labelPriority = new Label();
             tableLayoutPanel2 = new TableLayoutPanel();
             buttonStartOS = new Button();
             buttonEndOS = new Button();
@@ -64,13 +65,31 @@
             textBoxTIntrIO = new TextBox();
             textBoxTLoad = new TextBox();
             labelTimeElapsed = new Label();
+            buttonApplyNewParam = new Button();
             dataGridViewTasks = new DataGridView();
+            tableLayoutPanel3 = new TableLayoutPanel();
+            labelSystem = new Label();
+            labelUsageRAM = new Label();
+            labelPerformedTask = new Label();
+            tableLayoutPanel4 = new TableLayoutPanel();
+            panelCPUCommand = new Panel();
             label10 = new Label();
-            textBoxTGlobl = new TextBox();
+            labelNProc = new Label();
+            labelDsys = new Label();
+            labelMmulty = new Label();
+            labelTobor = new Label();
+            labelPC = new Label();
+            labelTick = new Label();
+            dataGridViewCommands = new DataGridView();
+            labelCmds = new Label();
             tableLayoutPanel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)trackBarDInOut).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)trackBarPriority).BeginInit();
             tableLayoutPanel2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridViewTasks).BeginInit();
+            tableLayoutPanel3.SuspendLayout();
+            tableLayoutPanel4.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dataGridViewCommands).BeginInit();
             SuspendLayout();
             // 
             // tableLayoutPanel1
@@ -90,12 +109,13 @@
             tableLayoutPanel1.Controls.Add(textBoxVTask, 1, 1);
             tableLayoutPanel1.Controls.Add(textBoxNCmnd, 2, 1);
             tableLayoutPanel1.Controls.Add(textBoxNInOut, 1, 3);
-            tableLayoutPanel1.Controls.Add(textBoxPrior, 2, 3);
             tableLayoutPanel1.Controls.Add(trackBarDInOut, 0, 3);
             tableLayoutPanel1.Controls.Add(labelTrackBarLocation, 0, 4);
             tableLayoutPanel1.Controls.Add(buttonAddTask, 1, 5);
             tableLayoutPanel1.Controls.Add(radioButtonManual, 0, 5);
             tableLayoutPanel1.Controls.Add(radioButtonAuto, 2, 5);
+            tableLayoutPanel1.Controls.Add(trackBarPriority, 2, 3);
+            tableLayoutPanel1.Controls.Add(labelPriority, 2, 4);
             tableLayoutPanel1.Location = new Point(16, 252);
             tableLayoutPanel1.Name = "tableLayoutPanel1";
             tableLayoutPanel1.RowCount = 6;
@@ -214,16 +234,6 @@
             textBoxNInOut.TabIndex = 10;
             textBoxNInOut.KeyPress += KeyPress;
             // 
-            // textBoxPrior
-            // 
-            textBoxPrior.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            textBoxPrior.Location = new Point(387, 146);
-            textBoxPrior.Name = "textBoxPrior";
-            textBoxPrior.PlaceholderText = "Num";
-            textBoxPrior.Size = new Size(169, 23);
-            textBoxPrior.TabIndex = 0;
-            textBoxPrior.KeyPress += KeyPress;
-            // 
             // trackBarDInOut
             // 
             trackBarDInOut.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
@@ -281,6 +291,26 @@
             radioButtonAuto.UseVisualStyleBackColor = true;
             radioButtonAuto.Click += radioButtonAuto_Click;
             // 
+            // trackBarPriority
+            // 
+            trackBarPriority.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            trackBarPriority.Location = new Point(387, 146);
+            trackBarPriority.Name = "trackBarPriority";
+            trackBarPriority.Size = new Size(169, 27);
+            trackBarPriority.TabIndex = 16;
+            trackBarPriority.Scroll += trackBarPrior_Scroll;
+            // 
+            // labelPriority
+            // 
+            labelPriority.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            labelPriority.AutoSize = true;
+            labelPriority.Location = new Point(387, 176);
+            labelPriority.Name = "labelPriority";
+            labelPriority.Size = new Size(169, 17);
+            labelPriority.TabIndex = 17;
+            labelPriority.Text = "0";
+            labelPriority.TextAlign = ContentAlignment.TopCenter;
+            // 
             // tableLayoutPanel2
             // 
             tableLayoutPanel2.BackColor = Color.LightGreen;
@@ -298,7 +328,6 @@
             tableLayoutPanel2.Controls.Add(label8, 1, 3);
             tableLayoutPanel2.Controls.Add(label1, 1, 0);
             tableLayoutPanel2.Controls.Add(label9, 2, 3);
-            tableLayoutPanel2.Controls.Add(label10, 2, 5);
             tableLayoutPanel2.Controls.Add(label3, 0, 5);
             tableLayoutPanel2.Controls.Add(textBoxSpeed, 0, 6);
             tableLayoutPanel2.Controls.Add(textBoxKvant, 1, 2);
@@ -306,8 +335,8 @@
             tableLayoutPanel2.Controls.Add(textBoxTInitIO, 0, 4);
             tableLayoutPanel2.Controls.Add(textBoxTIntrIO, 1, 4);
             tableLayoutPanel2.Controls.Add(textBoxTLoad, 2, 4);
-            tableLayoutPanel2.Controls.Add(textBoxTGlobl, 2, 6);
             tableLayoutPanel2.Controls.Add(labelTimeElapsed, 1, 6);
+            tableLayoutPanel2.Controls.Add(buttonApplyNewParam, 2, 6);
             tableLayoutPanel2.Location = new Point(16, 12);
             tableLayoutPanel2.Name = "tableLayoutPanel2";
             tableLayoutPanel2.RowCount = 7;
@@ -403,7 +432,7 @@
             label8.Name = "label8";
             label8.Size = new Size(180, 39);
             label8.TabIndex = 10;
-            label8.Text = "Затраты ОС по обслуживанию сигнала окончания";
+            label8.Text = "Затраты ОС обслуживание прерывания";
             label8.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // label1
@@ -427,7 +456,7 @@
             label9.Name = "label9";
             label9.Size = new Size(196, 39);
             label9.TabIndex = 11;
-            label9.Text = "Число тактов на загрузку нового задания";
+            label9.Text = "Время на загрузку нового задания";
             label9.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // label3
@@ -498,7 +527,7 @@
             // 
             textBoxTLoad.Location = new Point(360, 132);
             textBoxTLoad.Name = "textBoxTLoad";
-            textBoxTLoad.PlaceholderText = "Тактов";
+            textBoxTLoad.PlaceholderText = "мс";
             textBoxTLoad.Size = new Size(196, 23);
             textBoxTLoad.TabIndex = 17;
             textBoxTLoad.Text = "4";
@@ -515,40 +544,198 @@
             labelTimeElapsed.Text = "Время работы ОС: 0 с";
             labelTimeElapsed.TextAlign = ContentAlignment.MiddleLeft;
             // 
+            // buttonApplyNewParam
+            // 
+            buttonApplyNewParam.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            buttonApplyNewParam.Location = new Point(360, 203);
+            buttonApplyNewParam.Name = "buttonApplyNewParam";
+            buttonApplyNewParam.Size = new Size(196, 28);
+            buttonApplyNewParam.TabIndex = 20;
+            buttonApplyNewParam.Text = "Применить новые параметры";
+            buttonApplyNewParam.UseVisualStyleBackColor = true;
+            buttonApplyNewParam.Click += buttonApplyNewParam_Click;
+            // 
             // dataGridViewTasks
             // 
             dataGridViewTasks.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewTasks.Location = new Point(598, 252);
+            dataGridViewTasks.Location = new Point(598, 136);
+            dataGridViewTasks.MultiSelect = false;
             dataGridViewTasks.Name = "dataGridViewTasks";
-            dataGridViewTasks.Size = new Size(665, 366);
+            dataGridViewTasks.ReadOnly = true;
+            dataGridViewTasks.Size = new Size(685, 484);
             dataGridViewTasks.TabIndex = 3;
+            dataGridViewTasks.CellClick += dataGridViewTasks_CellClick;
+            // 
+            // tableLayoutPanel3
+            // 
+            tableLayoutPanel3.ColumnCount = 4;
+            tableLayoutPanel3.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 43.26923F));
+            tableLayoutPanel3.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 56.73077F));
+            tableLayoutPanel3.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 193F));
+            tableLayoutPanel3.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 8F));
+            tableLayoutPanel3.Controls.Add(labelSystem, 0, 0);
+            tableLayoutPanel3.Controls.Add(labelUsageRAM, 0, 2);
+            tableLayoutPanel3.Controls.Add(labelPerformedTask, 0, 3);
+            tableLayoutPanel3.Controls.Add(tableLayoutPanel4, 0, 1);
+            tableLayoutPanel3.Controls.Add(labelNProc, 1, 3);
+            tableLayoutPanel3.Controls.Add(labelDsys, 1, 2);
+            tableLayoutPanel3.Controls.Add(labelMmulty, 2, 3);
+            tableLayoutPanel3.Controls.Add(labelTobor, 2, 2);
+            tableLayoutPanel3.Controls.Add(labelPC, 1, 1);
+            tableLayoutPanel3.Controls.Add(labelTick, 2, 1);
+            tableLayoutPanel3.Location = new Point(598, 12);
+            tableLayoutPanel3.Name = "tableLayoutPanel3";
+            tableLayoutPanel3.RowCount = 4;
+            tableLayoutPanel3.RowStyles.Add(new RowStyle(SizeType.Percent, 49.1228065F));
+            tableLayoutPanel3.RowStyles.Add(new RowStyle(SizeType.Percent, 50.8771935F));
+            tableLayoutPanel3.RowStyles.Add(new RowStyle(SizeType.Absolute, 28F));
+            tableLayoutPanel3.RowStyles.Add(new RowStyle(SizeType.Absolute, 32F));
+            tableLayoutPanel3.Size = new Size(639, 118);
+            tableLayoutPanel3.TabIndex = 4;
+            // 
+            // labelSystem
+            // 
+            labelSystem.AutoSize = true;
+            labelSystem.Location = new Point(3, 0);
+            labelSystem.Name = "labelSystem";
+            labelSystem.Size = new Size(54, 15);
+            labelSystem.TabIndex = 0;
+            labelSystem.Text = "Ресурсы";
+            // 
+            // labelUsageRAM
+            // 
+            labelUsageRAM.AutoSize = true;
+            labelUsageRAM.Location = new Point(3, 57);
+            labelUsageRAM.Name = "labelUsageRAM";
+            labelUsageRAM.Size = new Size(158, 15);
+            labelUsageRAM.TabIndex = 2;
+            labelUsageRAM.Text = "Используемая память: 0 Кб";
+            // 
+            // labelPerformedTask
+            // 
+            labelPerformedTask.AutoSize = true;
+            labelPerformedTask.Location = new Point(3, 85);
+            labelPerformedTask.Name = "labelPerformedTask";
+            labelPerformedTask.Size = new Size(129, 15);
+            labelPerformedTask.TabIndex = 3;
+            labelPerformedTask.Text = "Выполняемая задача: ";
+            // 
+            // tableLayoutPanel4
+            // 
+            tableLayoutPanel4.ColumnCount = 2;
+            tableLayoutPanel4.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+            tableLayoutPanel4.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 22F));
+            tableLayoutPanel4.Controls.Add(panelCPUCommand, 1, 0);
+            tableLayoutPanel4.Controls.Add(label10, 0, 0);
+            tableLayoutPanel4.Location = new Point(3, 31);
+            tableLayoutPanel4.Name = "tableLayoutPanel4";
+            tableLayoutPanel4.RowCount = 1;
+            tableLayoutPanel4.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+            tableLayoutPanel4.Size = new Size(129, 23);
+            tableLayoutPanel4.TabIndex = 5;
+            // 
+            // panelCPUCommand
+            // 
+            panelCPUCommand.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            panelCPUCommand.BackColor = Color.Red;
+            panelCPUCommand.ForeColor = Color.Red;
+            panelCPUCommand.Location = new Point(110, 3);
+            panelCPUCommand.Name = "panelCPUCommand";
+            panelCPUCommand.Size = new Size(16, 17);
+            panelCPUCommand.TabIndex = 4;
             // 
             // label10
             // 
             label10.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             label10.AutoSize = true;
-            label10.Location = new Point(360, 158);
+            label10.Location = new Point(3, 0);
             label10.Name = "label10";
-            label10.Size = new Size(196, 42);
-            label10.TabIndex = 12;
-            label10.Text = "Затраты ОС на общение с общими данными";
+            label10.Size = new Size(101, 23);
+            label10.TabIndex = 5;
+            label10.Text = "Активность CPU";
             label10.TextAlign = ContentAlignment.MiddleCenter;
             // 
-            // textBoxTGlobl
+            // labelNProc
             // 
-            textBoxTGlobl.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            textBoxTGlobl.Location = new Point(360, 203);
-            textBoxTGlobl.Name = "textBoxTGlobl";
-            textBoxTGlobl.PlaceholderText = "Тактов";
-            textBoxTGlobl.Size = new Size(196, 23);
-            textBoxTGlobl.TabIndex = 18;
-            textBoxTGlobl.KeyPress += KeyPress;
+            labelNProc.AutoSize = true;
+            labelNProc.Location = new Point(192, 85);
+            labelNProc.Name = "labelNProc";
+            labelNProc.Size = new Size(177, 15);
+            labelNProc.TabIndex = 6;
+            labelNProc.Text = "Число загруженных заданий: 0";
+            // 
+            // labelDsys
+            // 
+            labelDsys.AutoSize = true;
+            labelDsys.Location = new Point(192, 57);
+            labelDsys.Name = "labelDsys";
+            labelDsys.Size = new Size(208, 15);
+            labelDsys.TabIndex = 7;
+            labelDsys.Text = "Системные затраты ОС (память): 0%";
+            labelDsys.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // labelMmulty
+            // 
+            labelMmulty.AutoSize = true;
+            labelMmulty.Location = new Point(440, 85);
+            labelMmulty.Name = "labelMmulty";
+            labelMmulty.Size = new Size(145, 15);
+            labelMmulty.TabIndex = 8;
+            labelMmulty.Text = "Выполненных заданий: 0";
+            // 
+            // labelTobor
+            // 
+            labelTobor.AutoSize = true;
+            labelTobor.Location = new Point(440, 57);
+            labelTobor.Name = "labelTobor";
+            labelTobor.Size = new Size(142, 15);
+            labelTobor.TabIndex = 9;
+            labelTobor.Text = "Время между задачами: ";
+            // 
+            // labelPC
+            // 
+            labelPC.AutoSize = true;
+            labelPC.Location = new Point(192, 28);
+            labelPC.Name = "labelPC";
+            labelPC.Size = new Size(118, 15);
+            labelPC.TabIndex = 10;
+            labelPC.Text = "Счётчик комманд: 0";
+            // 
+            // labelTick
+            // 
+            labelTick.AutoSize = true;
+            labelTick.Location = new Point(440, 28);
+            labelTick.Name = "labelTick";
+            labelTick.Size = new Size(38, 15);
+            labelTick.TabIndex = 11;
+            labelTick.Text = "Тик: 0";
+            // 
+            // dataGridViewCommands
+            // 
+            dataGridViewCommands.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridViewCommands.Location = new Point(1289, 29);
+            dataGridViewCommands.Name = "dataGridViewCommands";
+            dataGridViewCommands.ReadOnly = true;
+            dataGridViewCommands.Size = new Size(153, 589);
+            dataGridViewCommands.TabIndex = 5;
+            // 
+            // labelCmds
+            // 
+            labelCmds.AutoSize = true;
+            labelCmds.Location = new Point(1289, 9);
+            labelCmds.Name = "labelCmds";
+            labelCmds.Size = new Size(112, 15);
+            labelCmds.TabIndex = 6;
+            labelCmds.Text = "Задача не выбрана";
             // 
             // MainWindow
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1276, 632);
+            ClientSize = new Size(1451, 632);
+            Controls.Add(labelCmds);
+            Controls.Add(dataGridViewCommands);
+            Controls.Add(tableLayoutPanel3);
             Controls.Add(dataGridViewTasks);
             Controls.Add(tableLayoutPanel2);
             Controls.Add(tableLayoutPanel1);
@@ -557,10 +744,17 @@
             tableLayoutPanel1.ResumeLayout(false);
             tableLayoutPanel1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)trackBarDInOut).EndInit();
+            ((System.ComponentModel.ISupportInitialize)trackBarPriority).EndInit();
             tableLayoutPanel2.ResumeLayout(false);
             tableLayoutPanel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridViewTasks).EndInit();
+            tableLayoutPanel3.ResumeLayout(false);
+            tableLayoutPanel3.PerformLayout();
+            tableLayoutPanel4.ResumeLayout(false);
+            tableLayoutPanel4.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)dataGridViewCommands).EndInit();
             ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -595,14 +789,29 @@
         private TextBox textBoxVTask;
         private TextBox textBoxNCmnd;
         private TextBox textBoxNInOut;
-        private TextBox textBoxPrior;
         private Button buttonAddTask;
         private DataGridView dataGridViewTasks;
         private TrackBar trackBarDInOut;
         private Label labelTrackBarLocation;
         private RadioButton radioButtonManual;
         private RadioButton radioButtonAuto;
+        private Button buttonApplyNewParam;
+        private TrackBar trackBarPriority;
+        private Label labelPriority;
+        private TableLayoutPanel tableLayoutPanel3;
+        private Label labelSystem;
+        private Label labelUsageRAM;
+        private Label labelPerformedTask;
+        private Panel panelCPUCommand;
+        private TableLayoutPanel tableLayoutPanel4;
         private Label label10;
-        private TextBox textBoxTGlobl;
+        private Label labelNProc;
+        private Label labelDsys;
+        private Label labelMmulty;
+        private Label labelTobor;
+        private Label labelPC;
+        private Label labelTick;
+        private DataGridView dataGridViewCommands;
+        private Label labelCmds;
     }
 }

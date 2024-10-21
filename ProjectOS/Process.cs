@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ProjectOS
 {
-    internal class Process
+    public class Process
     {
         // Выходные параметры процесса
         public int Process_Id;  // Номер процесса
