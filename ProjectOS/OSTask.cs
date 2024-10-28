@@ -23,6 +23,7 @@ namespace ProjectOS
         public int CMDLen;
         public int executedCmd;
         public List<CMD> Commands = new List<CMD>();
+        public long StartTime;
 
         // Конструктор для задания
         public OSTask(int taskId, int vTask, int nCmnd, double dInOut, int nInOut, int prior)
@@ -35,11 +36,12 @@ namespace ProjectOS
             Prior = prior;
             IO_cmnd = (int)(N_cmnd * D_InOut / 100);
             Status = CMD.WAIT;
-            CMDLen = 50;
+            CMDLen = 1;
             currentCmd = 0;
             executedCmd = 0;
             int tIO = IO_cmnd;
             int tCMND = N_cmnd;
+            StartTime = DateTimeOffset.Now.ToUnixTimeMilliseconds(); // Устанавливаем время создания задачи
             Random rng = new Random();
             for (int i = 0; i< N_cmnd; i++)
             {

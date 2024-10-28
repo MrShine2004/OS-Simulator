@@ -27,6 +27,7 @@ namespace ProjectOS
         public Stopwatch stopwatch; // Объект Stopwatch для отсчёта времени
         public System.Windows.Forms.Timer uiTimer;
         public long timeStart;
+        public long timeExecutedTasks;
 
         // Random генератор
         Random random = new Random();
@@ -98,6 +99,7 @@ namespace ProjectOS
             myOS.M_multi = 0;
             myOS.N_Proc = 0;
             myOS.T_obor = 0;
+            myOS.T_multi_all = 0;
             RefreshInterface();
 
 
@@ -209,7 +211,6 @@ namespace ProjectOS
         {
             while (System_Status)
             {
-                DelaySimulate(1);
                 if (loadStatus)
                 {
                     SortTask();
@@ -218,6 +219,8 @@ namespace ProjectOS
                 //DelaySimulate(myOS.Speed);   // Скорость работы симуляции
                 if (tasksList.Count != 0)
                 {
+                    timeExecutedTasks = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                    long ttmp = timeExecutedTasks;
                     timeStart = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
                     // Затраты на выбор процесса для выполнения
                     DelaySimulate(myOS.T_next);
@@ -261,6 +264,10 @@ namespace ProjectOS
                             break;
                         }
                     }
+                    if (ttmp == timeExecutedTasks)
+                        timeExecutedTasks = 0;
+                    else
+                        myOS.T_multi_all += DateTimeOffset.Now.ToUnixTimeMilliseconds() - timeExecutedTasks;
                 }
                 else
                 {
@@ -470,6 +477,7 @@ namespace ProjectOS
                 labelNProc.Text = "Число загруженных заданий: " + myOS.N_Proc;
                 labelMmulty.Text = "Выполненных заданий: " + myOS.M_multi;
                 labelDsys.Text = "Системные затраты ОС (память): " + myOS.D_sys + "%";
+                labelDmulti.Text = "Производительность по сравнению: " + myOS.D_multi + "%";
                 labelTobor.Text = "Время между задачами: " + myOS.T_obor + " мс";
                 labelPC.Text = "Счётчик комманд: " + myCpu.PC;
                 labelTick.Text = "Тик: " + currentTick;
@@ -485,7 +493,7 @@ namespace ProjectOS
                 return;
             }
             System_Status = false;
-            myCpu.CurProc = -1; 
+            myCpu.CurProc = -1;
             myCpu.Command = false;
             dataGridViewTasks.Rows.Clear();
             RefreshInterface();
@@ -505,6 +513,18 @@ namespace ProjectOS
         {
             if (System_Status)
             {
+                if (tasksList.Count != 0 && timeExecutedTasks == 0)
+                {
+                    Console.WriteLine("" + tasksList.Count + " 1 " + timeExecutedTasks);
+                    timeExecutedTasks = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                }
+
+                if (tasksList.Count == 0 && timeExecutedTasks != 0)
+                {
+                    Console.WriteLine("" + tasksList.Count + " 2 " + timeExecutedTasks);
+                    myOS.T_multi_all += DateTimeOffset.Now.ToUnixTimeMilliseconds() - timeExecutedTasks;
+                    timeExecutedTasks = 0;
+                }
                 // Проверяем, что все необходимые поля заполнены, кроме ID, который генерируется автоматически
                 if (!string.IsNullOrWhiteSpace(textBoxVTask.Text) &&
                     !string.IsNullOrWhiteSpace(textBoxNCmnd.Text) &&
@@ -656,6 +676,7 @@ namespace ProjectOS
         // Асинхронная обработка команды ввода/вывода
         public async Task ProcessIOCommand (Process currentProcess)
         {
+            long timeExecutedTasks = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             OSTask currentTask = currentProcess.AssociatedTask;
             await Task.Run(() =>
             {
@@ -685,6 +706,7 @@ namespace ProjectOS
                 // Затраты ОС на обслуживание прерывания
                 DelaySimulate(myOS.T_IntrIO);
             });
+            myOS.T_multi_all += DateTimeOffset.Now.ToUnixTimeMilliseconds() - timeExecutedTasks;
         }
 
         // Обработчик события CellClick
@@ -816,6 +838,11 @@ namespace ProjectOS
                     }
                 }
             }
+        }
+
+        private void label16_Click (object sender, EventArgs e)
+        {
+
         }
     }
 }

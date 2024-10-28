@@ -80,6 +80,7 @@
             labelTobor = new Label();
             labelPC = new Label();
             labelTick = new Label();
+            labelDmulti = new Label();
             dataGridViewCommands = new DataGridView();
             labelCmds = new Label();
             tableLayoutPanel1.SuspendLayout();
@@ -568,11 +569,10 @@
             // 
             // tableLayoutPanel3
             // 
-            tableLayoutPanel3.ColumnCount = 4;
+            tableLayoutPanel3.ColumnCount = 3;
             tableLayoutPanel3.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 43.26923F));
             tableLayoutPanel3.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 56.73077F));
-            tableLayoutPanel3.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 193F));
-            tableLayoutPanel3.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 8F));
+            tableLayoutPanel3.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 275F));
             tableLayoutPanel3.Controls.Add(labelSystem, 0, 0);
             tableLayoutPanel3.Controls.Add(labelUsageRAM, 0, 2);
             tableLayoutPanel3.Controls.Add(labelPerformedTask, 0, 3);
@@ -583,6 +583,7 @@
             tableLayoutPanel3.Controls.Add(labelTobor, 2, 2);
             tableLayoutPanel3.Controls.Add(labelPC, 1, 1);
             tableLayoutPanel3.Controls.Add(labelTick, 2, 1);
+            tableLayoutPanel3.Controls.Add(labelDmulti, 2, 0);
             tableLayoutPanel3.Location = new Point(598, 12);
             tableLayoutPanel3.Name = "tableLayoutPanel3";
             tableLayoutPanel3.RowCount = 4;
@@ -590,7 +591,7 @@
             tableLayoutPanel3.RowStyles.Add(new RowStyle(SizeType.Percent, 50.8771935F));
             tableLayoutPanel3.RowStyles.Add(new RowStyle(SizeType.Absolute, 28F));
             tableLayoutPanel3.RowStyles.Add(new RowStyle(SizeType.Absolute, 32F));
-            tableLayoutPanel3.Size = new Size(639, 118);
+            tableLayoutPanel3.Size = new Size(712, 118);
             tableLayoutPanel3.TabIndex = 4;
             // 
             // labelSystem
@@ -677,7 +678,7 @@
             // labelMmulty
             // 
             labelMmulty.AutoSize = true;
-            labelMmulty.Location = new Point(440, 85);
+            labelMmulty.Location = new Point(439, 85);
             labelMmulty.Name = "labelMmulty";
             labelMmulty.Size = new Size(145, 15);
             labelMmulty.TabIndex = 8;
@@ -686,7 +687,7 @@
             // labelTobor
             // 
             labelTobor.AutoSize = true;
-            labelTobor.Location = new Point(440, 57);
+            labelTobor.Location = new Point(439, 57);
             labelTobor.Name = "labelTobor";
             labelTobor.Size = new Size(142, 15);
             labelTobor.TabIndex = 9;
@@ -704,25 +705,34 @@
             // labelTick
             // 
             labelTick.AutoSize = true;
-            labelTick.Location = new Point(440, 28);
+            labelTick.Location = new Point(439, 28);
             labelTick.Name = "labelTick";
             labelTick.Size = new Size(38, 15);
             labelTick.TabIndex = 11;
             labelTick.Text = "Тик: 0";
             // 
+            // labelDmulti
+            // 
+            labelDmulti.AutoSize = true;
+            labelDmulti.Location = new Point(439, 0);
+            labelDmulti.Name = "labelDmulti";
+            labelDmulti.Size = new Size(221, 15);
+            labelDmulti.TabIndex = 12;
+            labelDmulti.Text = "Производительность по сравнению: %";
+            // 
             // dataGridViewCommands
             // 
             dataGridViewCommands.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewCommands.Location = new Point(1289, 29);
+            dataGridViewCommands.Location = new Point(1316, 29);
             dataGridViewCommands.Name = "dataGridViewCommands";
             dataGridViewCommands.ReadOnly = true;
-            dataGridViewCommands.Size = new Size(153, 589);
+            dataGridViewCommands.Size = new Size(156, 589);
             dataGridViewCommands.TabIndex = 5;
             // 
             // labelCmds
             // 
             labelCmds.AutoSize = true;
-            labelCmds.Location = new Point(1289, 9);
+            labelCmds.Location = new Point(1316, 9);
             labelCmds.Name = "labelCmds";
             labelCmds.Size = new Size(112, 15);
             labelCmds.TabIndex = 6;
@@ -732,7 +742,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1451, 632);
+            ClientSize = new Size(1472, 632);
             Controls.Add(labelCmds);
             Controls.Add(dataGridViewCommands);
             Controls.Add(tableLayoutPanel3);
@@ -813,5 +823,6 @@
         private Label labelTick;
         private DataGridView dataGridViewCommands;
         private Label labelCmds;
+        private Label labelDmulti;
     }
 }

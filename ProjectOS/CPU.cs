@@ -50,8 +50,6 @@ namespace ProjectOS
                     mw.DelaySimulate(myOS.T_InitIO);
                     currentProcess.AssociatedTask.Status = CMD.IO_START;
                     mw.UpdateDataGridViewTasks();
-                    Console.WriteLine("Here, " + process.AssociatedTask.N_cmnd);
-                    Console.WriteLine("Here, 2 " + process.AssociatedTask.N_cmnd);
                     this.CurProc = -1;
                     this.Command = false;
                     mw.RefreshInterface();
@@ -115,6 +113,11 @@ namespace ProjectOS
 
                         mw.myCpu.CurProc = -1;
                         mw.myCpu.Command = false;
+                        mw.myOS.T_obor = DateTimeOffset.Now.ToUnixTimeMilliseconds() - currentTask.StartTime;
+                        mw.myOS.T_mono_all += mw.myOS.T_obor;
+                        mw.myOS.M_mono = (int)(((double)mw.myOS.T_multi_all / ((double)mw.myOS.T_mono_all / (double)mw.myOS.M_multi)));
+                        Console.WriteLine(mw.myOS.M_multi + " / " + mw.myOS.M_mono + " = " + mw.myOS.T_multi_all + " / " + (mw.myOS.T_mono_all / mw.myOS.M_multi));
+                        if (mw.myOS.M_mono != 0) mw.myOS.D_multi = (double)((double)mw.myOS.M_multi / (double)mw.myOS.M_mono) * (double)100.0;
                         mw.RefreshInterface();
                         return;
                     }
