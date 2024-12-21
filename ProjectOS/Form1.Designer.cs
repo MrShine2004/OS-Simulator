@@ -79,7 +79,6 @@
             labelMmulty = new Label();
             labelTobor = new Label();
             labelPC = new Label();
-            labelTick = new Label();
             labelDmulti = new Label();
             dataGridViewCommands = new DataGridView();
             labelCmds = new Label();
@@ -542,7 +541,7 @@
             labelTimeElapsed.Name = "labelTimeElapsed";
             labelTimeElapsed.Size = new Size(180, 34);
             labelTimeElapsed.TabIndex = 19;
-            labelTimeElapsed.Text = "Время работы ОС: 0 с";
+            labelTimeElapsed.Text = "Время работы ОС: 0 тактов";
             labelTimeElapsed.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // buttonApplyNewParam
@@ -582,7 +581,6 @@
             tableLayoutPanel3.Controls.Add(labelMmulty, 2, 3);
             tableLayoutPanel3.Controls.Add(labelTobor, 2, 2);
             tableLayoutPanel3.Controls.Add(labelPC, 1, 1);
-            tableLayoutPanel3.Controls.Add(labelTick, 2, 1);
             tableLayoutPanel3.Controls.Add(labelDmulti, 2, 0);
             tableLayoutPanel3.Location = new Point(598, 12);
             tableLayoutPanel3.Name = "tableLayoutPanel3";
@@ -702,23 +700,14 @@
             labelPC.TabIndex = 10;
             labelPC.Text = "Счётчик комманд: 0";
             // 
-            // labelTick
-            // 
-            labelTick.AutoSize = true;
-            labelTick.Location = new Point(439, 28);
-            labelTick.Name = "labelTick";
-            labelTick.Size = new Size(38, 15);
-            labelTick.TabIndex = 11;
-            labelTick.Text = "Тик: 0";
-            // 
             // labelDmulti
             // 
             labelDmulti.AutoSize = true;
             labelDmulti.Location = new Point(439, 0);
             labelDmulti.Name = "labelDmulti";
-            labelDmulti.Size = new Size(221, 15);
+            labelDmulti.Size = new Size(126, 28);
             labelDmulti.TabIndex = 12;
-            labelDmulti.Text = "Производительность по сравнению: %";
+            labelDmulti.Text = "Производительность \r\nпо сравнению: %";
             // 
             // dataGridViewCommands
             // 
@@ -820,7 +809,6 @@
         private Label labelMmulty;
         private Label labelTobor;
         private Label labelPC;
-        private Label labelTick;
         private DataGridView dataGridViewCommands;
         private Label labelCmds;
         private Label labelDmulti;

@@ -20,14 +20,16 @@ namespace ProjectOS
         public int currentTick = 0;
         public bool kvantStatus = false;
         public bool loadStatus = false;
+        public OSTask IOStatus = null;
         public int currentTaskId = 0;
         public OSTask executedTask = null;
 
-        public bool System_Status = false;
         public Stopwatch stopwatch; // Объект Stopwatch для отсчёта времени
         public System.Windows.Forms.Timer uiTimer;
+        public volatile bool System_Status = false;
         public long timeStart;
         public long timeExecutedTasks;
+        private CancellationTokenSource _cancellationTokenSource;
 
         // Random генератор
         Random random = new Random();
@@ -92,19 +94,22 @@ namespace ProjectOS
         // Запуск СИСТЕМЫ
         private void buttonStartOS_Click (object sender, EventArgs e)
         {
-            taskIdCounter = 0;
-            usageRAM = 0;
-            currentTick = 0;
-            myCpu.PC = 0;
-            myOS.M_multi = 0;
-            myOS.N_Proc = 0;
-            myOS.T_obor = 0;
-            myOS.T_multi_all = 0;
-            RefreshInterface();
-
-
             if (!System_Status)
             {
+                taskIdCounter = 0;
+                usageRAM = 0;
+                currentTick = 0;
+                myCpu.PC = 0;
+                myOS.M_multi = 0;
+                myOS.N_Proc = 0;
+                myOS.T_obor = 0;
+                myOS.T_multi_all = 0;
+                myOS.T_mono_all = 0;
+                myOS.D_multi = 0;
+                myOS.M_mono = 0;
+                myOS.T_multi = 0;
+                RefreshInterface();
+
                 if ((textBoxRAM.Text != "" && IsInteger(textBoxRAM.Text)) &&
                 (textBoxKvant.Text != "" && IsInteger(textBoxKvant.Text)) &&
                 (textBoxTNext.Text != "" && IsInteger(textBoxTNext.Text)) &&
@@ -124,22 +129,22 @@ namespace ProjectOS
                     myOS.Speed = int.Parse(textBoxSpeed.Text);
 
 
-                    System_Status = true;
-                    stopwatch = Stopwatch.StartNew(); // Запускаем Stopwatch
+                    // Прекратить старую симуляцию (если она была)
+                    if (_cancellationTokenSource != null)
+                    {
+                        _cancellationTokenSource.Cancel();
+                        _cancellationTokenSource.Dispose();
+                    }
 
-                    // Таймер для обновления интерфейса раз в 100 мс
-                    myOS.T_multi = new System.Timers.Timer(100);
-                    myOS.T_multi.Elapsed += UpdateTimeDisplay;
-                    myOS.T_multi.Start();
+                    _cancellationTokenSource = new CancellationTokenSource();
+
+                    System_Status = true;
+                    timeStart = myOS.T_multi; // Инициализация времени в тактах
 
 
                     Task.Run(() => TickSimulate());
-                    Task.Run(() => SimulateOS());
-                    // Таймер для обновления интерфейса раз в 100 мс
-                    uiTimer = new System.Windows.Forms.Timer();
-                    uiTimer.Interval = 1; // 100 мс
-                    uiTimer.Tick += (sender, e) => RefreshInterface();
-                    uiTimer.Start();
+                    Task.Run(() => SimulateOS(_cancellationTokenSource.Token));
+
                 }
                 else
                 {
@@ -161,7 +166,7 @@ namespace ProjectOS
 
         }
 
-        private async void TickSimulate ()
+        private void TickSimulate ()
         {
             while (System_Status)
             {
@@ -181,6 +186,8 @@ namespace ProjectOS
                 Thread.Sleep(myOS.Speed);
                 process.AssociatedTask.currentCmd--;
                 UpdateDataGridViewTasks();
+                myOS.T_multi++;
+                UpdateTimeDisplay();
             }
         }
 
@@ -191,7 +198,23 @@ namespace ProjectOS
             while (currentTick - tik <= temp)
             {
                 Thread.Sleep(myOS.Speed);
+                myOS.T_multi++;
+                UpdateTimeDisplay();
             }
+        }
+        
+        // Затраты IO
+        public int DelaySimulate (int temp, bool t, Process process)
+        {
+            int taktIO = 0;
+            int tik = currentTick;
+            while (currentTick - tik <= temp)
+            {
+                taktIO++;
+                TaktUpIO(process.AssociatedTask);
+                Thread.Sleep(myOS.Speed);
+            }
+            return taktIO;
         }
 
         // Затраты
@@ -204,98 +227,149 @@ namespace ProjectOS
                 Thread.Sleep(myOS.Speed);
                 process.AssociatedTask.currentCmd--;
                 UpdateDataGridViewTasks();
+                myOS.T_multi++;
+                UpdateTimeDisplay();
             }
         }
 
-        private async void SimulateOS ()
+        private void SimulateOS (CancellationToken token)
         {
-            while (System_Status)
+            while (System_Status && !token.IsCancellationRequested)
             {
+                // Если System_Status == false, выходим из цикла сразу
+                if (!System_Status)
+                {
+                    _cancellationTokenSource.Cancel();
+                    break;
+                }
+
+
                 if (loadStatus)
                 {
                     SortTask();
                     loadStatus = false;
                 }
-                //DelaySimulate(myOS.Speed);   // Скорость работы симуляции
-                if (tasksList.Count != 0)
+
+                if (tasksList.Count > 0)
                 {
-                    timeExecutedTasks = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                    long ttmp = timeExecutedTasks;
-                    timeStart = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
                     // Затраты на выбор процесса для выполнения
                     DelaySimulate(myOS.T_next);
 
                     // Получаем первый элемент списка
                     OSTask? currentTask = null;
 
-                    if (tasksList.Count > 0)
+                    if (tasksList.Count > 0) // Проверка наличия задач в списке
                     {
                         int i = 0;
+                        // Цикл для поиска первой задачи со статусом WAIT
                         while (i < tasksList.Count && tasksList[i].Status != CMD.WAIT)
                         {
-                            i++;
+                            i++; // Увеличение индекса для проверки следующей задачи
                         }
+                        // Проверка, что индекс i не превышает количество задач и задача не равна null
                         if (i < tasksList.Count && tasksList[i] != null)
-                            currentTask = tasksList[i];
+                            currentTask = tasksList[i]; // Присваивание текущей задачи
                     }
+
+                    // Проверка, если текущая задача не установлена (null), пропустить текущую итерацию
                     if (currentTask == null)
                     {
                         continue;
                     }
+
                     // Инкапсулируем в процесс
                     Process currentProcess = new Process(currentTask.Task_Id, currentTask, currentTask.Prior);
-                    currentTaskId = currentTask.Task_Id;
-                    executedTask = currentTask;
+                    currentTaskId = currentProcess.AssociatedTask.Task_Id;
+                    executedTask = currentProcess.AssociatedTask;
 
                     // Затраты на загрузку нового задания
-                    DelaySimulate(myOS.T_Load);
+                    DelaySimulate(myOS.T_Load); // Имитация затрат времени на загрузку нового задания
 
+                    // Цикл выполнения команд в пределах кванта времени
                     for (int k = 0; k < myOS.Kvant; k++)
                     {
-                        if (currentTask.N_cmnd > 0 &&
-                                            (currentTask.Status == CMD.WAIT) &&
-                                            (myCpu.CurProc == -1)
-                                            )
+                        // Проверка: если у текущего процесса есть команды для выполнения,
+                        // процесс находится в состоянии ожидания (WAIT),
+                        // и центральный процессор не занят другим процессом
+                        if (
+                            currentProcess.AssociatedTask.N_cmnd > 0 && // Проверка наличия оставшихся команд у текущего процесса
+                            (currentProcess.AssociatedTask.Status == CMD.WAIT) && // Проверка, что процесс находится в состоянии WAIT
+                            (myCpu.CurProc == -1) // Проверка, что центральный процессор свободен
+                           )
                         {
+                            // Выполнение команды процессора для текущего процесса
                             myCpu.ExecuteCommand(currentProcess, k);
                         }
                         else
                         {
+                            // Прерывание цикла, если условия для выполнения команды не выполняются
                             break;
                         }
                     }
-                    if (ttmp == timeExecutedTasks)
-                        timeExecutedTasks = 0;
-                    else
-                        myOS.T_multi_all += DateTimeOffset.Now.ToUnixTimeMilliseconds() - timeExecutedTasks;
+
+                    //myOS.T_multi_all += myOS.T_multi - timeStart; // Изменение на использование тактов
+
+                    if (!System_Status)
+                        break;
                 }
                 else
                 {
-                    continue;
+
+                    if (token.IsCancellationRequested)
+                    {
+                        // Выполняем необходимые действия при отмене
+                        Console.WriteLine("Симуляция завершена.");
+                        break;
+                    }
+                    if (System_Status)
+                    {
+                        Thread.Sleep(myOS.Speed);
+                        myOS.T_multi++;
+                        UpdateTimeDisplay(); 
+                        if (!System_Status)
+                        {
+                            _cancellationTokenSource.Cancel();
+                            break;
+                        }
+                    }
+                    if (!System_Status)
+                    {
+                        _cancellationTokenSource.Cancel();
+                        break;
+                    }
                 }
             }
+            _cancellationTokenSource.Cancel();
+            return;
         }
 
-        private void UpdateTimeDisplay (Object source, System.Timers.ElapsedEventArgs e)
+        private DateTime lastUpdate = DateTime.MinValue;
+
+        private void UpdateTimeDisplay ()
         {
-            // Используем Stopwatch для получения прошедшего времени
-            TimeSpan time = stopwatch.Elapsed;
+            if (this.IsDisposed)
+            {
+                return;
+            }
 
-            // Форматируем время: часы, минуты, секунды, миллисекунды
-            string timeFormatted = string.Format("{0:D2}:{1:D2}:{2:D2}.{3:D3}",
-                time.Hours, time.Minutes, time.Seconds, time.Milliseconds);
+            // Ограничение частоты обновления интерфейса (например, не чаще раза в 100 мс)
+            if ((DateTime.Now - lastUpdate).TotalMilliseconds < 100)
+            {
+                return;
+            }
 
-            // Обновляем отображение времени работы ОС
+            lastUpdate = DateTime.Now;
+
             if (labelTimeElapsed.InvokeRequired)
             {
-                labelTimeElapsed.BeginInvoke(new Action(() => labelTimeElapsed.Text = "Время работы ОС: " + timeFormatted));
+                labelTimeElapsed.BeginInvoke(new Action(() => labelTimeElapsed.Text = "Время работы ОС: " + myOS.T_multi + " тактов"));
             }
             else
             {
-                labelTimeElapsed.Text = "Время работы ОС: " + timeFormatted;
-                labelTick.Text = "Тик: " + currentTick;
+                labelTimeElapsed.Text = "Время работы ОС: " + myOS.T_multi + " тактов";
             }
         }
+
 
         private bool IsInteger (string lexeme)
         {
@@ -309,14 +383,21 @@ namespace ProjectOS
         }
         public void SortTask ()
         {
+            // Проверяем, что в списке задач больше одного элемента
             if (tasksList.Count() > 1)
+            {
+                // Сортируем список задач:
+                // 1. Убираем все элементы, которые равны null
+                // 2. Сортируем по убыванию приоритета задачи (чем больше Prior, тем выше приоритет)
+                // 3. Если приоритеты равны, сортируем по возрастанию Task_Id (чем меньше ID, тем раньше в списке)
                 tasksList = tasksList
-                .Where(t => t != null)  // Отфильтровываем элементы, которые не являются null
-                .OrderByDescending(t => t.Prior)
-                .ThenBy(t => t.Task_Id)
-                .ToList();
-
+                    .Where(t => t != null)  // Отфильтровываем элементы, которые не являются null
+                    .OrderByDescending(t => t.Prior)  // Сортировка по убыванию приоритета
+                    .ThenBy(t => t.Task_Id)  // Сортировка по возрастанию Task_Id при равных приоритетах
+                    .ToList();  // Преобразование в список
+            }
         }
+
 
         // Функция для обновления DataGridView
         public void UpdateDataGridViewTasks ()
@@ -350,8 +431,11 @@ namespace ProjectOS
                     }
                 }
 
+                // Создаем временный список для хранения новых задач
+                var newTasks = new List<OSTask>();
+
                 // Обновляем или добавляем задачи в таблицу
-                foreach (OSTask task in tasksList)
+                foreach (OSTask task in tasksList.ToList())
                 {
                     bool taskFound = false;
 
@@ -374,21 +458,28 @@ namespace ProjectOS
                         }
                     }
 
-                    // Если задачи не было, добавляем её как новую строку
+                    // Если задачи не было, добавляем её во временный список
                     if (!taskFound)
                     {
-                        dataGridViewTasks.Rows.Add(
-                            task.Task_Id,
-                            task.V_task,
-                            task.N_cmnd,
-                            task.D_InOut,
-                            task.N_InOut,
-                            task.Prior,
-                            task.Status,
-                            task.currentCmd
-                        );
+                        newTasks.Add(task);
                     }
                 }
+
+                // Добавляем новые задачи в DataGridView после завершения итерации
+                foreach (var task in newTasks)
+                {
+                    dataGridViewTasks.Rows.Add(
+                        task.Task_Id,
+                        task.V_task,
+                        task.N_cmnd,
+                        task.D_InOut,
+                        task.N_InOut,
+                        task.Prior,
+                        task.Status,
+                        task.currentCmd
+                    );
+                }
+
 
                 // Включаем обновление интерфейса обратно
                 dataGridViewTasks.ResumeLayout();
@@ -477,10 +568,10 @@ namespace ProjectOS
                 labelNProc.Text = "Число загруженных заданий: " + myOS.N_Proc;
                 labelMmulty.Text = "Выполненных заданий: " + myOS.M_multi;
                 labelDsys.Text = "Системные затраты ОС (память): " + myOS.D_sys + "%";
-                labelDmulti.Text = "Производительность по сравнению: " + myOS.D_multi + "%";
-                labelTobor.Text = "Время между задачами: " + myOS.T_obor + " мс";
+                labelDmulti.Text = "Производительность \nпо сравнению: " + myOS.D_multi.ToString("F2") + "%" + " = " + myOS.M_multi + "/" + myOS.M_mono;
+                labelTobor.Text = "Время между задачами: " + myOS.T_obor + " тактов";
                 labelPC.Text = "Счётчик комманд: " + myCpu.PC;
-                labelTick.Text = "Тик: " + currentTick;
+                UpdateTimeDisplay();
             }
         }
 
@@ -488,25 +579,46 @@ namespace ProjectOS
 
         private void buttonEndOS_Click (object sender, EventArgs e)
         {
-            if (System_Status == false)
+            if (System_Status)
             {
+                System_Status = false;
+                myCpu.CurProc = -1;
+                myCpu.Command = false;
+                dataGridViewTasks.Rows.Clear();
+                RefreshInterface();
+                tasksList.Clear();
+
+                // Отменяем текущий асинхронный процесс
+                _cancellationTokenSource?.Cancel();
+                System_Status = false;
+                // Остановить таймер обновления интерфейса
+                if (uiTimer != null)
+                {
+                    uiTimer.Stop();
+                }
+
+                textBoxRAM.ReadOnly = false;
+                textBoxKvant.ReadOnly = false;
+                textBoxTNext.ReadOnly = false;
+                textBoxTInitIO.ReadOnly = false;
+                textBoxTIntrIO.ReadOnly = false;
+                textBoxTLoad.ReadOnly = false;
+                textBoxSpeed.ReadOnly = false;
+
+                taskIdCounter = 0;
+                usageRAM = 0;
+                currentTick = 0;
+                myCpu.PC = 0;
+                myOS.M_multi = 0;
+                myOS.N_Proc = 0;
+                myOS.T_obor = 0;
+                myOS.T_multi_all = 0;
+                myOS.T_mono_all = 0;
+                myOS.D_multi = 0;
+                myOS.M_mono = 0;
+                myOS.T_multi = 0;
                 return;
             }
-            System_Status = false;
-            myCpu.CurProc = -1;
-            myCpu.Command = false;
-            dataGridViewTasks.Rows.Clear();
-            RefreshInterface();
-            tasksList.Clear();
-            myOS.T_multi.Stop();
-
-            textBoxRAM.ReadOnly = false;
-            textBoxKvant.ReadOnly = false;
-            textBoxTNext.ReadOnly = false;
-            textBoxTInitIO.ReadOnly = false;
-            textBoxTIntrIO.ReadOnly = false;
-            textBoxTLoad.ReadOnly = false;
-            textBoxSpeed.ReadOnly = false;
         }
 
         private void buttonAddTask_Click (object sender, EventArgs e)
@@ -516,13 +628,12 @@ namespace ProjectOS
                 if (tasksList.Count != 0 && timeExecutedTasks == 0)
                 {
                     Console.WriteLine("" + tasksList.Count + " 1 " + timeExecutedTasks);
-                    timeExecutedTasks = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                    timeExecutedTasks = myOS.T_multi;
                 }
 
                 if (tasksList.Count == 0 && timeExecutedTasks != 0)
                 {
                     Console.WriteLine("" + tasksList.Count + " 2 " + timeExecutedTasks);
-                    myOS.T_multi_all += DateTimeOffset.Now.ToUnixTimeMilliseconds() - timeExecutedTasks;
                     timeExecutedTasks = 0;
                 }
                 // Проверяем, что все необходимые поля заполнены, кроме ID, который генерируется автоматически
@@ -538,7 +649,8 @@ namespace ProjectOS
                         int.Parse(textBoxNCmnd.Text),
                         trackBarDInOut.Value,
                         int.Parse(textBoxNInOut.Text),
-                        trackBarPriority.Value);
+                        trackBarPriority.Value,
+                        myOS.T_multi);
 
                     if (usageRAM + newTask.V_task <= myOS.V_ozu)
                     {
@@ -664,50 +776,81 @@ namespace ProjectOS
             }
         }
 
-        // Метод для симуляции ввода/вывода
-        private void SimulateIOCommand (Process process, CPU myCpu, int N_InOut)
+        // Метод для симуляции выполнения команды ввода/вывода
+        // Принимает процесс, процессор и количество операций ввода/вывода
+        private int SimulateIOCommand (Process process, CPU myCpu, int N_InOut)
         {
-            process.D_ready += myOS.T_IntrIO; // Увеличиваем время ожидания
-            process.AssociatedTask.IO_cmnd--;
-            DelaySimulate(process.AssociatedTask.N_InOut, process);
-            //UpdateDataGridViewTasks();
+            int taktIO = 0; // Счетчик тактов ввода/вывода
+            process.AssociatedTask.currentCmd = process.AssociatedTask.N_InOut; // Устанавливаем текущую команду как число операций ввода/вывода для задачи
+
+            // Цикл выполняется до тех пор, пока не пройдет заданное количество тактов
+            while (taktIO < process.AssociatedTask.N_InOut)
+            {
+                taktIO++; // Увеличиваем счетчик тактов
+                TaktUpIO(process.AssociatedTask); // Выполняем шаг симуляции ввода/вывода для текущей задачи
+                Thread.Sleep(myOS.Speed); // Задержка для имитации временной паузы в работе ОС
+                process.AssociatedTask.currentCmd--; // Уменьшаем количество оставшихся команд для выполнения
+                UpdateDataGridViewTasks(); // Обновляем отображение данных в таблице задач
+            }
+            return taktIO; // Возвращаем общее количество тактов, затраченных на симуляцию
         }
 
-        // Асинхронная обработка команды ввода/вывода
+        // Метод для обработки команды ввода/вывода
+        // Принимает текущий процесс для выполнения команды
         public async Task ProcessIOCommand (Process currentProcess)
         {
-            long timeExecutedTasks = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            OSTask currentTask = currentProcess.AssociatedTask;
+            int executedTime = 0; // Инициализация времени выполнения
+            OSTask currentTask = currentProcess.AssociatedTask; // Получение связанной задачи из текущего процесса
+
+            // Выполняем асинхронную обработку команды ввода/вывода
             await Task.Run(() =>
             {
-                // Обрабатываем команду ввода/вывода
-                OSTask currentTask = currentProcess.AssociatedTask;
-                OSTask task = currentProcess.AssociatedTask;
+                OSTask currentTask = currentProcess.AssociatedTask; // Получаем текущую задачу
+                OSTask task = currentProcess.AssociatedTask; // Дублируем ссылку на задачу
 
-                // Выполнение команды ввода/вывода
-                currentTask.Status = CMD.IO;
-                UpdateDataGridViewTasks();
-                SimulateIOCommand(currentProcess, myCpu, task.N_InOut);
+                // Проверяем, не занята ли операция ввода/вывода и устанавливаем статус
+                if (IOStatus == null)
+                    IOStatus = currentTask;
 
-                currentTask.Status = CMD.IO_END;
-                UpdateDataGridViewTasks();
-                // Затраты на обслуживание прерывания ввода/вывода
-                DelaySimulate(myOS.T_IntrIO);
-                currentTask.IO_cmnd--;
-                currentTask.N_cmnd--;
+                currentTask.Status = CMD.IO; // Устанавливаем статус задачи на выполнение команды ввода/вывода
+                UpdateDataGridViewTasks(); // Обновляем интерфейс для отображения изменений
 
+                // Выполняем симуляцию команды ввода/вывода и обновляем время выполнения
+                executedTime += SimulateIOCommand(currentProcess, myCpu, task.N_InOut);
 
-                //currentProcess.AssociatedTask.Commands.RemoveAt(0);
-                currentProcess.AssociatedTask.executedCmd++;
-                // Затраты ОС на изменение состояния процесса
-                DelaySimulate(myOS.T_InitIO);
+                currentTask.Status = CMD.IO_END; // Устанавливаем статус окончания выполнения команды
+                UpdateDataGridViewTasks(); // Обновляем интерфейс
+
+                currentTask.IO_cmnd--; // Уменьшаем счетчик команд ввода/вывода
+                currentTask.N_cmnd--; // Уменьшаем общее количество оставшихся команд
+
+                currentProcess.AssociatedTask.executedCmd++; // Увеличиваем счетчик выполненных команд
+
+                // Устанавливаем статус ожидания для текущей задачи после завершения команды
                 currentTask.Status = CMD.WAIT;
-                UpdateDataGridViewTasks();
-                // Затраты ОС на обслуживание прерывания
-                DelaySimulate(myOS.T_IntrIO);
+                UpdateDataGridViewTasks(); // Обновляем интерфейс
+
+                //currentTask.executedTime += executedTime; // Добавляем время выполнения к общему времени задачи
+                myOS.T_mono_all += executedTime; // Увеличиваем общее время выполнения моноопераций
+
+                // Сбрасываем статус ввода/вывода
+                IOStatus = null;
             });
-            myOS.T_multi_all += DateTimeOffset.Now.ToUnixTimeMilliseconds() - timeExecutedTasks;
         }
+
+        // Метод для обновления статуса выполнения ввода/вывода
+        // Принимает текущую задачу, чтобы обновить её состояние
+        public void TaktUpIO (OSTask curTask)
+        {
+            // Проверка, является ли текущая задача активной для выполнения ввода/вывода
+            if (IOStatus == curTask && IOStatus != null)
+
+            {
+                myOS.T_multi_all++;
+                Console.WriteLine(myOS.T_multi_all + " " + curTask.Task_Id);
+            }
+        }
+
 
         // Обработчик события CellClick
         private void dataGridViewTasks_CellClick (object sender, DataGridViewCellEventArgs e)
@@ -838,11 +981,6 @@ namespace ProjectOS
                     }
                 }
             }
-        }
-
-        private void label16_Click (object sender, EventArgs e)
-        {
-
         }
     }
 }
